@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Metrolinx Voice Assistant</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#00A04B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Metrolinx Voice">
+    
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚂</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚂</text></svg>">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Mobile-specific optimizations -->
+    <style>
+        /* Additional mobile optimizations */
+        body {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        /* Prevent zoom on input focus */
+        input, select, textarea {
+            font-size: 16px;
+        }
+        
+        /* Better mobile button */
+        .voice-button {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        
+        /* Mobile-specific loading indicator */
+        .mobile-loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 160, 75, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile loading indicator -->
+    <div class="mobile-loading" id="mobileLoading">
+        <div>🎤 Listening...</div>
+    </div>
+    
+    <!-- Main App Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">🚂</div>
+            <h1>METROLINX</h1>
+            <h2>Voice Transit Assistant</h2>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="instruction">
+                <p>Press and hold the button to speak</p>
+            </div>
+
+            <!-- Voice Button -->
+            <div class="voice-control">
+                <button id="voiceButton" class="voice-button">
+                    <span class="mic-icon">🎤</span>
+                    <span class="button-text">Hold to Speak</span>
+                </button>
+            </div>
+
+            <!-- Status Display -->
+            <div id="status" class="status"></div>
+
+            <!-- Response Display -->
+            <div id="response" class="response"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Supported: English • 中文</p>
+            <p class="mobile-tip">💡 Add to home screen for quick access</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="speech-handler.js"></script>
+    <script src="metrolinx-api.js"></script>
+    <script src="app.js"></script>
+    
+    <!-- Mobile-specific enhancements -->
+    <script>
+        // Mobile-specific optimizations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Prevent zoom on double tap
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+            
+            // Show mobile loading indicator during voice recognition
+            const mobileLoading = document.getElementById('mobileLoading');
+            const originalStartListening = window.app?.speechHandler?.startListening;
+            
+            if (window.app?.speechHandler && originalStartListening) {
+                window.app.speechHandler.startListening = async function() {
+                    mobileLoading.style.display = 'block';
+                    try {
+                        const result = await originalStartListening.call(this);
+                        return result;
+                    } finally {
+                        mobileLoading.style.display = 'none';
+                    }
+                };
+            }
+            
+            // PWA install prompt
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                
+                // Show install hint after 10 seconds
+                setTimeout(() => {
+                    if (deferredPrompt) {
+                        const installHint = document.createElement('div');
+                        installHint.innerHTML = '💡 Tip: Add this app to your home screen for quick access!';
+                        installHint.style.cssText = `
+                            position: fixed;
+                            bottom: 20px;
+                            left: 20px;
+                            right: 20px;
+                            background: #00A04B;
+                            color: white;
+                            padding: 15px;
+                            border-radius: 10px;
+                            text-align: center;
+                            font-size: 14px;
+                            z-index: 1000;
+                            cursor: pointer;
+                        `;
+                        
+                        installHint.addEventListener('click', async () => {
+                            if (deferredPrompt) {
+                                deferredPrompt.prompt();
+                                const { outcome } = await deferredPrompt.userChoice;
+                                console.log(`User response to install prompt: ${outcome}`);
+                                deferredPrompt = null;
+                            }
+                            installHint.remove();
+                        });
+                        
+                        document.body.appendChild(installHint);
+                        
+                        // Auto-hide after 10 seconds
+                        setTimeout(() => {
+                            if (installHint.parentNode) {
+                                installHint.remove();
+                            }
+                        }, 10000);
+                    }
+                }, 10000);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinese Speech Test - 中文语音测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .test-button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        .test-button.recording {
+            background: #f44336;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .result {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196F3; }
+        h1 { text-align: center; }
+        .instructions {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Chinese Speech Test</h1>
+        <h2 style="text-align: center;">中文语音测试</h2>
+        
+        <div class="instructions">
+            <h3>Instructions / 说明:</h3>
+            <p><strong>English:</strong> Click the button below and say "联合站到金莺站" (Union Station to Oriole Station) in Chinese. The app will use English speech recognition but detect Chinese phonetic patterns.</p>
+            <p><strong>中文:</strong> 点击下面的按钮，说"联合站到金莺站"。应用程序将使用英文语音识别，但会检测中文语音模式。</p>
+        </div>
+
+        <button class="test-button" id="test-btn" onclick="testChineseDetection()">
+            🎤 Test Chinese Speech / 测试中文语音
+        </button>
+        
+        <div class="result" id="result"></div>
+        
+        <div class="instructions">
+            <h3>What to expect / 预期结果:</h3>
+            <ul>
+                <li>The browser will capture your Chinese speech using English recognition</li>
+                <li>You might see phonetic approximations like "leon her john dow gin ying john"</li>
+                <li>The app should detect this as Chinese and respond appropriately</li>
+                <li>浏览器将使用英文识别捕获您的中文语音</li>
+                <li>您可能会看到语音近似，如"leon her john dow gin ying john"</li>
+                <li>应用程序应该检测到这是中文并做出适当响应</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="speech-handler.js"></script>
+    <script>
+        let speechHandler = null;
+        let isListening = false;
+
+        // Initialize speech handler
+        try {
+            speechHandler = new SpeechHandler();
+            log('Speech handler initialized successfully', 'success');
+        } catch (error) {
+            log('Failed to initialize speech handler: ' + error.message, 'error');
+        }
+
+        function log(message, type = 'info') {
+            const result = document.getElementById('result');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type;
+            result.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span>\n`;
+            result.scrollTop = result.scrollHeight;
+        }
+
+        async function testChineseDetection() {
+            const button = document.getElementById('test-btn');
+            
+            if (isListening) {
+                // Stop listening
+                try {
+                    await speechHandler.stopListening();
+                    button.textContent = '🎤 Test Chinese Speech / 测试中文语音';
+                    button.classList.remove('recording');
+                    isListening = false;
+                    log('Stopped listening', 'info');
+                } catch (error) {
+                    log('Error stopping: ' + error.message, 'error');
+                }
+                return;
+            }
+
+            // Start listening
+            try {
+                button.textContent = '🔴 Stop / 停止';
+                button.classList.add('recording');
+                isListening = true;
+                
+                log('Starting Chinese speech test...', 'info');
+                log('Please say: "联合站到金莺站"', 'info');
+                
+                const result = await speechHandler.startListening();
+                
+                if (result && result.transcript) {
+                    log(`Raw transcript: "${result.transcript}"`, 'info');
+                    log(`Detected language: ${result.language}`, result.language === 'zh' ? 'success' : 'warning');
+                    log(`Confidence: ${result.confidence}`, 'info');
+                    
+                    if (result.language === 'zh') {
+                        log('🎉 SUCCESS: Chinese detected!', 'success');
+                        log('The phonetic pattern recognition is working!', 'success');
+                    } else {
+                        log('⚠️ Chinese not detected, but transcript captured', 'warning');
+                        log('This might still work for transit queries', 'info');
+                    }
+                } else {
+                    log('No speech detected', 'warning');
+                    log('Try speaking louder or closer to the microphone', 'info');
+                }
+                
+            } catch (error) {
+                log('Error: ' + error.message, 'error');
+            } finally {
+                button.textContent = '🎤 Test Chinese Speech / 测试中文语音';
+                button.classList.remove('recording');
+                isListening = false;
+            }
+        }
+
+        // Test the detection patterns directly
+        function testPatterns() {
+            log('Testing Chinese phonetic patterns...', 'info');
+            
+            const testPhrases = [
+                'leon her john dow gin ying john',
+                'leon hope john to gin yang john',
+                'lean heart zone to jean young zone',
+                'line hub station to gene ying station',
+                'lynn home john dow gym yang john',
+                'union station to oriole station',
+                '联合站到金莺站'
+            ];
+            
+            testPhrases.forEach(phrase => {
+                const detectedLang = speechHandler.detectLanguage(phrase);
+                log(`"${phrase}" → ${detectedLang}`, detectedLang === 'zh' ? 'success' : 'info');
+            });
+        }
+
+        // Auto-test patterns on load
+        window.addEventListener('load', () => {
+            setTimeout(testPatterns, 1000);
+        });
+    </script>
+</body>
+</html>

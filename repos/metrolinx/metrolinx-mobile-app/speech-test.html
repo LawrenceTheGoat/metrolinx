@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Recognition Test - 语音识别测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .test-button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        .test-button:active {
+            transform: translateY(0);
+        }
+        .test-button.recording {
+            background: #f44336;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .status {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196F3; }
+        h1, h2 { text-align: center; }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Speech Recognition Diagnostic Tool</h1>
+        <h2>语音识别诊断工具</h2>
+        
+        <div class="section">
+            <h3>Step 1: Browser Support Check / 浏览器支持检查</h3>
+            <button class="test-button" onclick="checkBrowserSupport()">Check Browser Support / 检查浏览器支持</button>
+            <div id="browser-status" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h3>Step 2: Microphone Permission / 麦克风权限</h3>
+            <button class="test-button" onclick="checkMicrophonePermission()">Test Microphone / 测试麦克风</button>
+            <div id="mic-status" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h3>Step 3: Speech Recognition Test / 语音识别测试</h3>
+            <button class="test-button" id="speech-test-btn" onclick="testSpeechRecognition()">Test Speech Recognition / 测试语音识别</button>
+            <div id="speech-status" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h3>Step 4: Chinese Speech Test / 中文语音测试</h3>
+            <p>Say: "联合站到金莺站" or "Union station to Oriole station"</p>
+            <p>说: "联合站到金莺站" 或者 "Union station to Oriole station"</p>
+            <button class="test-button" id="chinese-test-btn" onclick="testChineseSpeech()">Test Chinese Speech / 测试中文语音</button>
+            <div id="chinese-status" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h3>Diagnostic Results / 诊断结果</h3>
+            <div id="diagnostic-results" class="status"></div>
+        </div>
+    </div>
+
+    <script>
+        let recognition = null;
+        let diagnosticResults = [];
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type;
+            element.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span>\n`;
+            element.scrollTop = element.scrollHeight;
+            
+            // Add to diagnostic results
+            diagnosticResults.push(`${timestamp} - ${message}`);
+            updateDiagnosticResults();
+        }
+
+        function updateDiagnosticResults() {
+            const element = document.getElementById('diagnostic-results');
+            element.innerHTML = diagnosticResults.join('\n');
+        }
+
+        function checkBrowserSupport() {
+            log('browser-status', 'Checking browser support...', 'info');
+            
+            // Check user agent
+            log('browser-status', `Browser: ${navigator.userAgent}`, 'info');
+            log('browser-status', `Language: ${navigator.language}`, 'info');
+            log('browser-status', `Languages: ${navigator.languages.join(', ')}`, 'info');
+            
+            // Check speech recognition support
+            if ('webkitSpeechRecognition' in window) {
+                log('browser-status', '✅ webkitSpeechRecognition supported', 'success');
+            } else if ('SpeechRecognition' in window) {
+                log('browser-status', '✅ SpeechRecognition supported', 'success');
+            } else {
+                log('browser-status', '❌ Speech Recognition NOT supported', 'error');
+                return;
+            }
+            
+            // Check speech synthesis support
+            if ('speechSynthesis' in window) {
+                log('browser-status', '✅ Speech Synthesis supported', 'success');
+                
+                // List available voices
+                const voices = speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    log('browser-status', `Available voices: ${voices.length}`, 'info');
+                    const chineseVoices = voices.filter(v => v.lang.startsWith('zh'));
+                    log('browser-status', `Chinese voices: ${chineseVoices.length}`, chineseVoices.length > 0 ? 'success' : 'warning');
+                } else {
+                    log('browser-status', 'No voices loaded yet, this is normal on page load', 'warning');
+                }
+            } else {
+                log('browser-status', '❌ Speech Synthesis NOT supported', 'error');
+            }
+            
+            // Check if running on localhost
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                log('browser-status', '✅ Running on localhost (good for testing)', 'success');
+            } else if (location.protocol === 'https:') {
+                log('browser-status', '✅ Running on HTTPS (required for production)', 'success');
+            } else {
+                log('browser-status', '⚠️ Running on HTTP (may cause issues in production)', 'warning');
+            }
+        }
+
+        async function checkMicrophonePermission() {
+            log('mic-status', 'Checking microphone permission...', 'info');
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                log('mic-status', '✅ Microphone permission granted', 'success');
+                log('mic-status', `Audio tracks: ${stream.getAudioTracks().length}`, 'info');
+                
+                // Test audio input
+                const audioTrack = stream.getAudioTracks()[0];
+                if (audioTrack) {
+                    log('mic-status', `Audio track label: ${audioTrack.label}`, 'info');
+                    log('mic-status', `Audio track enabled: ${audioTrack.enabled}`, 'info');
+                    log('mic-status', `Audio track ready state: ${audioTrack.readyState}`, 'info');
+                }
+                
+                // Stop the stream
+                stream.getTracks().forEach(track => track.stop());
+                log('mic-status', '✅ Microphone test completed successfully', 'success');
+                
+            } catch (error) {
+                log('mic-status', `❌ Microphone permission denied: ${error.message}`, 'error');
+                log('mic-status', 'Please allow microphone access and try again', 'warning');
+            }
+        }
+
+        function testSpeechRecognition() {
+            const button = document.getElementById('speech-test-btn');
+            
+            if (recognition && recognition.isListening) {
+                recognition.stop();
+                return;
+            }
+            
+            log('speech-status', 'Initializing speech recognition...', 'info');
+            
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                
+                recognition.continuous = false;
+                recognition.interimResults = true;
+                recognition.maxAlternatives = 3;
+                recognition.lang = 'en-US';
+                
+                log('speech-status', 'Speech recognition configured for English', 'info');
+                
+                recognition.onstart = () => {
+                    log('speech-status', '🎤 Listening... Please speak now', 'success');
+                    button.textContent = 'Stop Listening / 停止监听';
+                    button.classList.add('recording');
+                    recognition.isListening = true;
+                };
+                
+                recognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const result = event.results[i];
+                        const transcript = result[0].transcript;
+                        const confidence = result[0].confidence;
+                        
+                        if (result.isFinal) {
+                            finalTranscript += transcript;
+                            log('speech-status', `Final: "${transcript}" (confidence: ${confidence})`, 'success');
+                        } else {
+                            interimTranscript += transcript;
+                            log('speech-status', `Interim: "${transcript}"`, 'info');
+                        }
+                        
+                        // Log alternatives
+                        if (result.length > 1) {
+                            for (let j = 1; j < Math.min(result.length, 3); j++) {
+                                log('speech-status', `Alternative ${j}: "${result[j].transcript}" (${result[j].confidence})`, 'info');
+                            }
+                        }
+                    }
+                };
+                
+                recognition.onend = () => {
+                    log('speech-status', '🔇 Speech recognition ended', 'info');
+                    button.textContent = 'Test Speech Recognition / 测试语音识别';
+                    button.classList.remove('recording');
+                    recognition.isListening = false;
+                };
+                
+                recognition.onerror = (event) => {
+                    log('speech-status', `❌ Speech recognition error: ${event.error}`, 'error');
+                    button.textContent = 'Test Speech Recognition / 测试语音识别';
+                    button.classList.remove('recording');
+                    recognition.isListening = false;
+                    
+                    // Provide specific error guidance
+                    switch (event.error) {
+                        case 'no-speech':
+                            log('speech-status', '💡 No speech detected. Try speaking louder or closer to microphone', 'warning');
+                            break;
+                        case 'audio-capture':
+                            log('speech-status', '💡 Audio capture failed. Check microphone connection', 'warning');
+                            break;
+                        case 'not-allowed':
+                            log('speech-status', '💡 Permission denied. Allow microphone access in browser settings', 'warning');
+                            break;
+                        case 'network':
+                            log('speech-status', '💡 Network error. Check internet connection', 'warning');
+                            break;
+                    }
+                };
+                
+                recognition.start();
+                
+            } catch (error) {
+                log('speech-status', `❌ Failed to initialize speech recognition: ${error.message}`, 'error');
+            }
+        }
+
+        function testChineseSpeech() {
+            const button = document.getElementById('chinese-test-btn');
+            
+            if (recognition && recognition.isListening) {
+                recognition.stop();
+                return;
+            }
+            
+            log('chinese-status', 'Testing Chinese speech recognition...', 'info');
+            log('chinese-status', 'Please say: "联合站到金莺站" or "Union station to Oriole station"', 'info');
+            
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                
+                recognition.continuous = false;
+                recognition.interimResults = true;
+                recognition.maxAlternatives = 5;
+                recognition.lang = 'zh-CN'; // Start with Chinese
+                
+                log('chinese-status', 'Speech recognition configured for Chinese (zh-CN)', 'info');
+                
+                recognition.onstart = () => {
+                    log('chinese-status', '🎤 Listening for Chinese... 正在监听中文...', 'success');
+                    button.textContent = 'Stop Chinese Test / 停止中文测试';
+                    button.classList.add('recording');
+                    recognition.isListening = true;
+                };
+                
+                recognition.onresult = (event) => {
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const result = event.results[i];
+                        
+                        // Log all alternatives for debugging
+                        for (let j = 0; j < Math.min(result.length, 5); j++) {
+                            const transcript = result[j].transcript;
+                            const confidence = result[j].confidence;
+                            const status = result.isFinal ? 'Final' : 'Interim';
+                            
+                            log('chinese-status', `${status} ${j}: "${transcript}" (confidence: ${confidence})`, 
+                                result.isFinal ? 'success' : 'info');
+                            
+                            // Check if this looks like Chinese station names
+                            if (transcript.includes('联合') || transcript.includes('金莺') || 
+                                transcript.toLowerCase().includes('union') || 
+                                transcript.toLowerCase().includes('oriole')) {
+                                log('chinese-status', '🎉 Detected station names in transcript!', 'success');
+                            }
+                        }
+                    }
+                };
+                
+                recognition.onend = () => {
+                    log('chinese-status', '🔇 Chinese speech recognition ended', 'info');
+                    button.textContent = 'Test Chinese Speech / 测试中文语音';
+                    button.classList.remove('recording');
+                    recognition.isListening = false;
+                    
+                    // Try English as fallback
+                    setTimeout(() => {
+                        log('chinese-status', 'Trying English as fallback...', 'warning');
+                        testEnglishFallback();
+                    }, 1000);
+                };
+                
+                recognition.onerror = (event) => {
+                    log('chinese-status', `❌ Chinese speech error: ${event.error}`, 'error');
+                    button.textContent = 'Test Chinese Speech / 测试中文语音';
+                    button.classList.remove('recording');
+                    recognition.isListening = false;
+                };
+                
+                recognition.start();
+                
+            } catch (error) {
+                log('chinese-status', `❌ Failed to test Chinese speech: ${error.message}`, 'error');
+            }
+        }
+
+        function testEnglishFallback() {
+            log('chinese-status', 'Testing English fallback for Chinese speech...', 'info');
+            
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const fallbackRecognition = new SpeechRecognition();
+                
+                fallbackRecognition.continuous = false;
+                fallbackRecognition.interimResults = true;
+                fallbackRecognition.maxAlternatives = 5;
+                fallbackRecognition.lang = 'en-US';
+                
+                fallbackRecognition.onstart = () => {
+                    log('chinese-status', '🎤 Fallback: Listening with English recognition...', 'warning');
+                };
+                
+                fallbackRecognition.onresult = (event) => {
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const result = event.results[i];
+                        
+                        for (let j = 0; j < Math.min(result.length, 3); j++) {
+                            const transcript = result[j].transcript;
+                            const confidence = result[j].confidence;
+                            
+                            log('chinese-status', `Fallback ${j}: "${transcript}" (${confidence})`, 'warning');
+                            
+                            // Check for phonetic approximations
+                            const lower = transcript.toLowerCase();
+                            if (lower.includes('union') || lower.includes('oriole') ||
+                                lower.includes('young') || lower.includes('hope') ||
+                                lower.includes('gin') || lower.includes('ying')) {
+                                log('chinese-status', '🎯 Detected possible Chinese phonetics in English!', 'success');
+                            }
+                        }
+                    }
+                };
+                
+                fallbackRecognition.onend = () => {
+                    log('chinese-status', '✅ Fallback test completed', 'info');
+                };
+                
+                fallbackRecognition.onerror = (event) => {
+                    log('chinese-status', `Fallback error: ${event.error}`, 'error');
+                };
+                
+                // Auto-start fallback test
+                setTimeout(() => {
+                    fallbackRecognition.start();
+                }, 500);
+                
+            } catch (error) {
+                log('chinese-status', `Fallback test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Load voices when available
+        if ('speechSynthesis' in window) {
+            speechSynthesis.addEventListener('voiceschanged', () => {
+                const voices = speechSynthesis.getVoices();
+                console.log('Voices loaded:', voices.length);
+            });
+        }
+
+        // Auto-run browser support check on load
+        window.addEventListener('load', () => {
+            setTimeout(checkBrowserSupport, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrolinx Voice Query</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#003c71">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo-placeholder">
+                <div class="logo-icon">🚊</div>
+                <div class="logo-text">METROLINX</div>
+            </div>
+            <h1>Voice Transit Assistant</h1>
+        </header>
+
+        <main class="main-content">
+            <div class="status-display">
+                <div id="status-text" class="status-text">Press and hold the button to speak</div>
+                <div id="language-indicator" class="language-indicator"></div>
+            </div>
+
+            <div class="voice-button-container">
+                <button id="voice-button" class="voice-button" type="button">
+                    <div class="button-content">
+                        <div class="microphone-icon">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                            </svg>
+                        </div>
+                        <span class="button-text">Hold to Speak</span>
+                    </div>
+                    <div class="pulse-ring"></div>
+                </button>
+            </div>
+
+            <div id="transcript-display" class="transcript-display">
+                <div class="transcript-content">
+                    <div id="transcript-text" class="transcript-text"></div>
+                    <div id="detected-language" class="detected-language"></div>
+                </div>
+            </div>
+
+            <div id="response-display" class="response-display">
+                <div class="response-content">
+                    <div id="response-text" class="response-text"></div>
+                    <div class="audio-controls">
+                        <button id="pause-button" class="pause-button" style="display: none;">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                            </svg>
+                            Pause
+                        </button>
+                        <button id="replay-button" class="replay-button" style="display: none;">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+                            </svg>
+                            Replay
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <div class="supported-languages">
+                <span>Supported: English • 中文</span>
+            </div>
+        </footer>
+    </div>
+
+    <div id="error-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Error</h3>
+                <button id="close-error" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="error-message"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="metrolinx-api.js"></script>
+    <script src="speech-handler.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

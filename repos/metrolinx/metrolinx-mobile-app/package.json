@@ -1,0 +1,33 @@
+{
+  "name": "metrolinx-voice-assistant-backend",
+  "version": "1.0.0",
+  "description": "Backend server for Metrolinx Voice Transit Assistant with real-time data integration",
+  "main": "backend-server.js",
+  "scripts": {
+    "start": "node backend-server.js",
+    "dev": "nodemon backend-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "metrolinx",
+    "transit",
+    "voice-assistant",
+    "gtfs",
+    "real-time",
+    "api"
+  ],
+  "author": "Metrolinx Voice Assistant Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^2.6.7",
+    "protobufjs": "^7.2.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

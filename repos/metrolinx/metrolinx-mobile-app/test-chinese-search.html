@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinese Search Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .test-button {
+            background: #00A651;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .test-button:hover {
+            background: #008A43;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🇨🇳 Chinese Search Functionality Test</h1>
+    
+    <div class="test-container">
+        <h2>Test Chinese Query Processing</h2>
+        <p>Enter a Chinese query to test the parsing functionality:</p>
+        
+        <input type="text" id="testQuery" class="test-input" 
+               placeholder="Try: 联合站到金莺站 or what happened next round" 
+               value="联合站到金莺站">
+        
+        <button onclick="testQuery()" class="test-button">Test Query</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Predefined Test Cases</h2>
+        <p>Click to test common Chinese queries:</p>
+        
+        <button onclick="testPredefined('联合站到金莺站')" class="test-button">联合站到金莺站</button>
+        <button onclick="testPredefined('what happened next round')" class="test-button">Speech Recognition Result</button>
+        <button onclick="testPredefined('leon her john dow gin ying john')" class="test-button">Phonetic Pattern</button>
+        <button onclick="testPredefined('你好')" class="test-button">你好 (Greeting)</button>
+        
+        <div id="predefinedResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script src="gtfs-parser.js"></script>
+    <script src="real-gtfs-api.js"></script>
+    <script>
+        let realGTFSAPI;
+        
+        // Initialize the API
+        async function initAPI() {
+            try {
+                realGTFSAPI = new RealGTFSAPI();
+                console.log('API initialized successfully');
+                showResult('API initialized successfully!', 'success');
+            } catch (error) {
+                console.error('Failed to initialize API:', error);
+                showResult('Failed to initialize API: ' + error.message, 'error');
+            }
+        }
+        
+        // Test a query
+        async function testQuery() {
+            const query = document.getElementById('testQuery').value;
+            if (!query.trim()) {
+                showResult('Please enter a query to test', 'error');
+                return;
+            }
+            
+            await runTest(query, 'result');
+        }
+        
+        // Test predefined queries
+        async function testPredefined(query) {
+            await runTest(query, 'predefinedResult');
+        }
+        
+        // Run the actual test
+        async function runTest(query, resultElementId) {
+            try {
+                showResult('Testing query: "' + query + '"\n\nProcessing...', 'info', resultElementId);
+                
+                if (!realGTFSAPI) {
+                    await initAPI();
+                }
+                
+                console.log('=== TESTING QUERY ===');
+                console.log('Query:', query);
+                
+                // Test the parsing first
+                const parsed = realGTFSAPI.parseVoiceQuery(query);
+                console.log('Parsed result:', parsed);
+                
+                let resultText = 'QUERY: "' + query + '"\n\n';
+                resultText += '=== PARSING RESULT ===\n';
+                resultText += 'Type: ' + parsed.type + '\n';
+                resultText += 'Language: ' + parsed.language + '\n';
+                
+                if (parsed.fromStation) {
+                    resultText += 'From Station: ' + parsed.fromStation + '\n';
+                }
+                if (parsed.toStation) {
+                    resultText += 'To Station: ' + parsed.toStation + '\n';
+                }
+                if (parsed.station) {
+                    resultText += 'Station: ' + parsed.station + '\n';
+                }
+                
+                resultText += '\n=== API PROCESSING ===\n';
+                
+                // Test the full API processing
+                const response = await realGTFSAPI.processVoiceQuery(query, parsed.language);
+                console.log('API response:', response);
+                
+                resultText += 'Success: ' + response.success + '\n';
+                resultText += 'Type: ' + response.type + '\n';
+                resultText += 'Message: ' + response.message + '\n';
+                
+                if (response.data) {
+                    resultText += '\nData: ' + JSON.stringify(response.data, null, 2);
+                }
+                
+                showResult(resultText, response.success ? 'success' : 'error', resultElementId);
+                
+            } catch (error) {
+                console.error('Test error:', error);
+                showResult('ERROR: ' + error.message + '\n\nStack: ' + error.stack, 'error', resultElementId);
+            }
+        }
+        
+        // Show result in UI
+        function showResult(text, type, elementId = 'result') {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.textContent = text;
+            resultDiv.className = 'result ' + type;
+            resultDiv.style.display = 'block';
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', initAPI);
+    </script>
+</body>
+</html>
