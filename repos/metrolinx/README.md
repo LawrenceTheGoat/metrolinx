@@ -78,7 +78,7 @@ A mobile-first Progressive Web App (PWA) that allows users to interact with Metr
    ```bash
    node server.js --http
    ```
-   Then open: `http://localhost:8080`
+   Then open: `http://localhost:8001`
    
    **Option D: Live Server (VS Code Extension)**
    - Install the Live Server extension in VS Code
