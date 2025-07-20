@@ -218,7 +218,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 The current Voice Transit Assistant is **already mobile-ready** and can be used on smartphones immediately! 
 
 **Try it now:**
-1. Open `http://localhost:8080` on your phone
+1. Open `http://localhost:8001` on your phone
 2. Add to home screen when prompted
 3. Use like a native app!
 

@@ -113,7 +113,7 @@ Language preference set to Chinese
 
 ## 🚀 **Ready to Try?**
 
-1. **Open the app** at `http://localhost:8080`
+1. **Open the app** at `http://localhost:8001`
 2. **Press and hold** the voice button
 3. **Say a leading word**: "Hello" or "你好"
 4. **Wait for confirmation**
